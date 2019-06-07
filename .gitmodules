@@ -1,0 +1,3 @@
+[submodule "XlsxText"]
+	path = XlsxText
+	url = https://github.com/iCunda/XlsxText.git
