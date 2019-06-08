@@ -14,6 +14,8 @@ namespace XlsxExporter
         [STAThread]
         static void Main()
         {
+            Config.Read();
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());

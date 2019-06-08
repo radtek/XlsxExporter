@@ -29,16 +29,18 @@
         private void InitializeComponent()
         {
             System.Windows.Forms.Label label1;
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this._btn_editConfig = new System.Windows.Forms.Button();
             this._btn_reloadConfig = new System.Windows.Forms.Button();
             this._btn_export = new System.Windows.Forms.Button();
-            this._tb_outPath = new System.Windows.Forms.TextBox();
+            this._tb_exportDir = new System.Windows.Forms.TextBox();
             this._btn_outBrowse = new System.Windows.Forms.Button();
-            this._lv_taskView = new System.Windows.Forms.ListView();
             this._lb_status = new System.Windows.Forms.Label();
             this._pb_progress = new System.Windows.Forms.ProgressBar();
             this._lb_progressText = new System.Windows.Forms.Label();
+            this._dgv_task = new System.Windows.Forms.DataGridView();
             label1 = new System.Windows.Forms.Label();
+            ((System.ComponentModel.ISupportInitialize)(this._dgv_task)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -70,7 +72,7 @@
             this._btn_reloadConfig.TabIndex = 4;
             this._btn_reloadConfig.Text = "重新载入";
             this._btn_reloadConfig.UseVisualStyleBackColor = true;
-            this._btn_reloadConfig.Click += new System.EventHandler(this._bt_reloadConfig_Click);
+            this._btn_reloadConfig.Click += new System.EventHandler(this._btn_reloadConfig_Click);
             // 
             // _btn_export
             // 
@@ -81,16 +83,16 @@
             this._btn_export.TabIndex = 5;
             this._btn_export.Text = "开始输出";
             this._btn_export.UseVisualStyleBackColor = true;
-            this._btn_export.Click += new System.EventHandler(this._bt_export_Click);
+            this._btn_export.Click += new System.EventHandler(this._btn_export_Click);
             // 
-            // _tb_outPath
+            // _tb_exportDir
             // 
-            this._tb_outPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this._tb_exportDir.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this._tb_outPath.Location = new System.Drawing.Point(79, 9);
-            this._tb_outPath.Name = "_tb_outPath";
-            this._tb_outPath.Size = new System.Drawing.Size(264, 21);
-            this._tb_outPath.TabIndex = 1;
+            this._tb_exportDir.Location = new System.Drawing.Point(79, 9);
+            this._tb_exportDir.Name = "_tb_exportDir";
+            this._tb_exportDir.Size = new System.Drawing.Size(264, 21);
+            this._tb_exportDir.TabIndex = 1;
             // 
             // _btn_outBrowse
             // 
@@ -101,19 +103,7 @@
             this._btn_outBrowse.TabIndex = 2;
             this._btn_outBrowse.Text = "浏览";
             this._btn_outBrowse.UseVisualStyleBackColor = true;
-            this._btn_outBrowse.Click += new System.EventHandler(this._bn_outBrowse_Click);
-            // 
-            // _lv_taskView
-            // 
-            this._lv_taskView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this._lv_taskView.BackColor = System.Drawing.SystemColors.Control;
-            this._lv_taskView.Location = new System.Drawing.Point(0, 39);
-            this._lv_taskView.Name = "_lv_taskView";
-            this._lv_taskView.Size = new System.Drawing.Size(734, 377);
-            this._lv_taskView.TabIndex = 6;
-            this._lv_taskView.UseCompatibleStateImageBehavior = false;
+            this._btn_outBrowse.Click += new System.EventHandler(this._btn_outBrowse_Click);
             // 
             // _lb_status
             // 
@@ -130,6 +120,7 @@
             // 
             this._pb_progress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this._pb_progress.Location = new System.Drawing.Point(554, 419);
+            this._pb_progress.Maximum = 100000;
             this._pb_progress.Name = "_pb_progress";
             this._pb_progress.Size = new System.Drawing.Size(150, 13);
             this._pb_progress.TabIndex = 0;
@@ -144,24 +135,58 @@
             this._lb_progressText.TabIndex = 0;
             this._lb_progressText.Text = "100%";
             // 
+            // _dgv_task
+            // 
+            this._dgv_task.AllowUserToAddRows = false;
+            this._dgv_task.AllowUserToDeleteRows = false;
+            this._dgv_task.AllowUserToResizeRows = false;
+            this._dgv_task.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this._dgv_task.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this._dgv_task.BackgroundColor = System.Drawing.SystemColors.Control;
+            this._dgv_task.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
+            this._dgv_task.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this._dgv_task.DefaultCellStyle = dataGridViewCellStyle1;
+            this._dgv_task.GridColor = System.Drawing.SystemColors.Control;
+            this._dgv_task.Location = new System.Drawing.Point(-1, 36);
+            this._dgv_task.Name = "_dgv_task";
+            this._dgv_task.ReadOnly = true;
+            this._dgv_task.RowHeadersVisible = false;
+            this._dgv_task.RowTemplate.Height = 23;
+            this._dgv_task.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this._dgv_task.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this._dgv_task.Size = new System.Drawing.Size(735, 377);
+            this._dgv_task.TabIndex = 7;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(734, 435);
+            this.Controls.Add(this._dgv_task);
             this.Controls.Add(this._lb_progressText);
             this.Controls.Add(this._pb_progress);
             this.Controls.Add(this._lb_status);
-            this.Controls.Add(this._lv_taskView);
             this.Controls.Add(this._btn_outBrowse);
             this.Controls.Add(label1);
-            this.Controls.Add(this._tb_outPath);
+            this.Controls.Add(this._tb_exportDir);
             this.Controls.Add(this._btn_export);
             this.Controls.Add(this._btn_reloadConfig);
             this.Controls.Add(this._btn_editConfig);
             this.MinimumSize = new System.Drawing.Size(750, 400);
             this.Name = "MainForm";
             this.Text = "Xlsx Exporter";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+            this.Load += new System.EventHandler(this.MainForm_Load);
+            ((System.ComponentModel.ISupportInitialize)(this._dgv_task)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -172,11 +197,11 @@
         private System.Windows.Forms.Button _btn_reloadConfig;
         private System.Windows.Forms.Button _btn_editConfig;
         private System.Windows.Forms.Button _btn_outBrowse;
-        private System.Windows.Forms.TextBox _tb_outPath;
-        private System.Windows.Forms.ListView _lv_taskView;
+        private System.Windows.Forms.TextBox _tb_exportDir;
         private System.Windows.Forms.Label _lb_status;
         private System.Windows.Forms.ProgressBar _pb_progress;
         private System.Windows.Forms.Label _lb_progressText;
+        private System.Windows.Forms.DataGridView _dgv_task;
     }
 }
 
