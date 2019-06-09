@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
 namespace XlsxExporter
 {
-    public partial class MainForm : Form, IProgresser
+    public partial class MainForm : Form
     {
 
         public DataGridViewRowCollection Rows => _dgv_task.Rows;
@@ -15,7 +16,7 @@ namespace XlsxExporter
         {
             InitializeComponent();
 
-            _exporter = new Exporter(this);
+            _exporter = new Exporter();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -24,12 +25,7 @@ namespace XlsxExporter
             _tb_exportDir.Text = Config.ExportDir;
 
             _tm_updateUI.Tick += new EventHandler((_, _1) => UpdateUI());
-            _exporter.Load();
-        }
-
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            _exporter.Dispose();
+            _exporter.Load(OnStatus);
         }
 
         private void _btn_outBrowse_Click(object sender, EventArgs e)
@@ -64,35 +60,37 @@ namespace XlsxExporter
         private void _btn_export_Click(object sender, EventArgs e)
         {
             _tb_exportDir.Enabled = _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = _btn_export.Enabled = false;
-            _exporter.Export(() => Invoke(new Action(() => _tb_exportDir.Enabled = _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = _btn_export.Enabled = true)));
+            _exporter.Export(isOk => Invoke(new Action(() => _tb_exportDir.Enabled = _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = _btn_export.Enabled = true)), OnStatus);
         }
 
         private void reload()
         {
             Rows.Clear();
-            _exporter.Load();
+            _exporter.Load(OnStatus);
         }
 
-        private Dictionary<string, string[/*4*/]> progressCache = new Dictionary<string, string[/*4*/]>();
+        private Dictionary<string, string[/*6*/]> progressCache = new Dictionary<string, string[/*6*/]>();
         private void UpdateUI()
         {
-            List<string[]> updateData = new List<string[]>();
+            List<string[/*4*/]> updateData = new List<string[/*4*/]>();
             foreach (var cache in progressCache)
             {
-                string status = cache.Value[0] != cache.Value[2] ? cache.Value[2] : null;
-                string progress = cache.Value[1] != cache.Value[3] ? cache.Value[3] : null;
+                string status = cache.Value[0] != cache.Value[3] ? cache.Value[3] : null;
+                string progress = cache.Value[1] != cache.Value[4] ? cache.Value[4] : null;
+                string error = cache.Value[2] != cache.Value[5] ? cache.Value[5] : null;
 
-                if (status != null || progress != null)
-                    updateData.Add(new string[] { cache.Key, status, progress });
+                if (status != null || progress != null || error != null)
+                    updateData.Add(new string[4] { cache.Key, status, progress, error });
 
-                cache.Value[0] = cache.Value[2];
-                cache.Value[1] = cache.Value[3];
-                cache.Value[2] = cache.Value[3] = null;
+                cache.Value[0] = cache.Value[3];
+                cache.Value[1] = cache.Value[4];
+                cache.Value[2] = cache.Value[5];
+                cache.Value[3] = cache.Value[4] = cache.Value[5] = null;
             }
 
             foreach (var data in updateData)
             {
-                string file = data[0], status = data[1], progress = data[2];
+                string file = data[0], status = data[1], progress = data[2], error = data[3];
                 if (file != "")
                 {
                     string name = Path.GetFileName(file);
@@ -112,6 +110,8 @@ namespace XlsxExporter
                     }
                     if (status != null) row.Cells[1].Value = status;
                     if (progress != null) row.Cells[2].Value = progress;
+                    if (error == true.ToString()) row.DefaultCellStyle.ForeColor = Color.Red;
+                    else if (error == false.ToString()) row.DefaultCellStyle.ForeColor = Color.Black;
                 }
                 else
                 {
@@ -127,21 +127,24 @@ namespace XlsxExporter
                         else
                             _pb_progress.Visible = _lb_progressText.Visible = false;
                     }
+                    if (error == true.ToString()) _lb_status.ForeColor = Color.Red;
+                    else if (error == false.ToString()) _lb_status.ForeColor = Color.Black;
                 }
             }
         }
 
-        public void OnProgress(string file, string status, string progress)
+        public void OnStatus(string file, string status, string progress, bool isError = false)
         {
             if (string.IsNullOrEmpty(file)) file = "";
 
             if (!progressCache.TryGetValue(file, out _))
             {
-                var temp = new string[4] { "", "", null, null };
+                var temp = new string[6] { "", "", null, null, null, null };
                 progressCache.Add(file, temp);
             }
-            if (status != null) progressCache[file][2] = status;
-            if (progress != null) progressCache[file][3] = progress;
+            if (status != null) progressCache[file][3] = status;
+            if (progress != null) progressCache[file][4] = progress;
+            progressCache[file][5] = isError.ToString();
         }
     }
 }

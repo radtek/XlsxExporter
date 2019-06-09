@@ -9,12 +9,10 @@ using XlsxText;
 
 namespace XlsxExporter
 {
-    public interface IProgresser
-    {
-        void OnProgress(string file, string status, string progress);
-    }
+    public delegate void OnCompletedHandler(bool isOk);
+    public delegate void OnStatusHandler(string file, string status, string progress, bool isError = false);
 
-    public class Exporter : IDisposable
+    public class Exporter
     {
         /// <summary>
         /// Xlsx数据
@@ -23,52 +21,50 @@ namespace XlsxExporter
         /// <summary>
         /// 进度视图
         /// </summary>
-        public IProgresser View { get; private set; }
-
-        public Exporter(IProgresser view)
-        {
-            View = view;
-        }
         /// <summary>
         /// 加载
         /// </summary>
-        public void Load()
+        public void Load(OnStatusHandler onStatus)
         {
-            Clear();
+            _xlsxData.Clear();
             var importDir = new DirectoryInfo(Config.ImportDir);
             if (importDir.Exists)
             {
                 foreach (var fileInfo in importDir.GetFiles("*.xlsx"))
                 {
-                    _xlsxData.Add(fileInfo.FullName,  new Dictionary<string, List<List<XlsxTextCell>>>());
-                    View.OnProgress(fileInfo.FullName, "就绪", "");
+                    _xlsxData.Add(fileInfo.FullName, new Dictionary<string, List<List<XlsxTextCell>>>());
+                    onStatus?.Invoke(fileInfo.FullName, "就绪", "");
                 }
             }
-            View.OnProgress(null, "就绪", "0");
+            onStatus?.Invoke(null, "就绪", "0");
         }
 
         /// <summary>
         /// 导出
         /// </summary>
-        public void Export(Action onCompleted)
+        public void Export(OnCompletedHandler onCompleted, OnStatusHandler onStatus)
         {
+#if DEBUG
             Stopwatch sw = new Stopwatch();
             sw.Start();
-
-            read(() =>
+#endif
+            Read(isOk1 =>
             {
-                _readThreads.Clear();
-                new CsvConverter().Convert(_xlsxData, new Action(() =>
+                if (isOk1)
                 {
-                    onCompleted?.Invoke();
-                    sw.Stop();
-                    Console.WriteLine("读取完成！总共花费{0}ms.", sw.Elapsed.TotalMilliseconds);
-                }), View);
-            });
+                    new CsvConverter().Convert(_xlsxData, isOk2 =>
+                    {
+                        onCompleted?.Invoke(isOk2);
+#if DEBUG
+                        sw.Stop();
+                        Debug.Print("读取完成！总共花费" + sw.Elapsed.TotalMilliseconds + "ms");
+#endif
+                    }, onStatus);
+                }
+            }, onStatus);
         }
 
-        private List<Thread> _readThreads = new List<Thread>();
-        private void read(Action onCompleted)
+        public void Read(OnCompletedHandler onCompleted, OnStatusHandler onStatus)
         {
             /**
              * 文件的读取状态，0 未读，1 在读，2 读完
@@ -80,74 +76,96 @@ namespace XlsxExporter
                 xlsx.Value.Clear();
             }
 
+            string error = null;
+            List<Thread> readThreads = new List<Thread>();
             ThreadStart readAsync = delegate
             {
                 foreach (var xlsx in _xlsxData)
                 {
+                    if (error != null) return;
+
                     string file = xlsx.Key;
                     Dictionary<string, List<List<XlsxTextCell>>> data = xlsx.Value;
-
                     if (xlsxStatus[file] == 0)
                     {
                         xlsxStatus[file] = 1;
+                        onStatus?.Invoke(null, "正在读取... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
+                        onStatus?.Invoke(file, "正在读取 ", "正在分析...");
 
-                        View.OnProgress(null, "正在读取... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
-                        View.OnProgress(file, "正在读取 ", "正在分析...");
-                        using (XlsxTextReader xlsxReader = XlsxTextReader.Create(file))
+                        try
                         {
-                            int sheetCount = 0;
-                            while (xlsxReader.Read())
+                            using (XlsxTextReader xlsxReader = XlsxTextReader.Create(file))
                             {
-                                ++sheetCount;
-
-                                List<List<XlsxTextCell>> sheet = new List<List<XlsxTextCell>>();
-                                long cellCount = 0;
-                                XlsxTextSheetReader sheetReader = xlsxReader.SheetReader;
-                                while (sheetReader.Read())
+                                int sheetCount = 0;
+                                while (xlsxReader.Read())
                                 {
-                                    List<XlsxTextCell> row = new List<XlsxTextCell>();
-                                    foreach (var cell in sheetReader.Row)
+                                    ++sheetCount;
+                                    List<List<XlsxTextCell>> sheet = new List<List<XlsxTextCell>>();
+                                    long cellCount = 0;
+                                    XlsxTextSheetReader sheetReader = xlsxReader.SheetReader;
+                                    while (sheetReader.Read())
                                     {
-                                        row.Add(cell);
-                                        ++cellCount;
-                                        View.OnProgress(file, "正在读取", "文件进度：" + sheetCount + "/" + xlsxReader.SheetsCount + ", 表格：" + sheetReader.Name + ", 进度：" + (int)(cellCount * 100.0 / sheetReader.CellCount) + " %");
+                                        List<XlsxTextCell> row = new List<XlsxTextCell>();
+                                        foreach (var cell in sheetReader.Row)
+                                        {
+                                            row.Add(cell);
+                                            ++cellCount;
+                                            onStatus?.Invoke(file, "正在读取", "文件进度：" + sheetCount + "/" + xlsxReader.SheetsCount + ", 表格：" + sheetReader.Name + ", 进度：" + (int)(cellCount * 100.0 / sheetReader.CellCount) + " %");
+
+                                            if (error != null)
+                                            {
+                                                onStatus?.Invoke(file, "读取中断", null);
+                                                return;
+                                            }
+                                        }
+                                        sheet.Add(row);
                                     }
-                                    sheet.Add(row);
+                                    data.Add(sheetReader.Name, sheet);
                                 }
-                                data.Add(sheetReader.Name, sheet);
                             }
+                        }
+                        catch (Exception e)
+                        {  
+                            if (error != null)
+                            {
+                                onStatus?.Invoke(file, "读取中断", null);
+                                return;
+                            }
+
+                            error = e.Message;
+                            onStatus?.Invoke(file, "读取出错", error, true);
+                            onStatus?.Invoke(null, "读取出错。" + error, null, true);
+
+                            Debug.Print("读取中断, 等待线程结束，剩余线程个数：" + readThreads.Count(thread => thread.IsAlive));
+                            while (readThreads.Count(thread => thread.IsAlive) > 1) /** 等待其他线程结束 */;
+
+                            onCompleted?.Invoke(false);
+                            onCompleted = null; 
+                            return;
                         }
 
                         xlsxStatus[file] = 2;
-                        View.OnProgress(file, "读取完成", null);
-                        View.OnProgress(null, "正在读取... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
+                        onStatus?.Invoke(file, "读取完成", null);
+                        onStatus?.Invoke(null, "正在读取... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
                     }
                 }
                 if (xlsxStatus.ToArray().Count(e => e.Value == 2) == xlsxStatus.Count)
                 {
-                    View.OnProgress(null, "读取完成", null);
-                    onCompleted?.Invoke();
+                    Debug.Print("读取完成, 剩余线程个数：" + readThreads.Count(thread => thread.IsAlive));
+                    onStatus?.Invoke(null, "读取完成", null);
+
+                    onCompleted?.Invoke(true);
                     onCompleted = null;
                 }
             };
 
-            _readThreads.Clear();
             for (int i = 0; i < Config.ExportThreadCount; ++i)
             {
                 var thread = new Thread(readAsync);
-                _readThreads.Add(thread);
+                thread.IsBackground = true;
+                readThreads.Add(thread);
                 thread.Start();
             }
         }
-        public void Clear()
-        {
-            foreach (var thread in _readThreads)
-                thread.Abort();
-            _readThreads.Clear();
-
-            _xlsxData.Clear();
-        }
-
-        public void Dispose() => Clear();
     }
 }

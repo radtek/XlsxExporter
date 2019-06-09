@@ -40,10 +40,10 @@
             this._pb_progress = new System.Windows.Forms.ProgressBar();
             this._lb_progressText = new System.Windows.Forms.Label();
             this._dgv_task = new System.Windows.Forms.DataGridView();
-            this._tm_updateUI = new System.Windows.Forms.Timer(this.components);
             this._ch_name = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this._ch_status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this._ch_progress = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this._tm_updateUI = new System.Windows.Forms.Timer(this.components);
             label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this._dgv_task)).BeginInit();
             this.SuspendLayout();
@@ -175,10 +175,6 @@
             this._dgv_task.Size = new System.Drawing.Size(735, 380);
             this._dgv_task.TabIndex = 7;
             // 
-            // _tm_updateUI
-            // 
-            this._tm_updateUI.Enabled = true;
-            // 
             // _ch_name
             // 
             this._ch_name.FillWeight = 25F;
@@ -200,6 +196,11 @@
             this._ch_progress.Name = "_ch_progress";
             this._ch_progress.ReadOnly = true;
             // 
+            // _tm_updateUI
+            // 
+            this._tm_updateUI.Enabled = true;
+            this._tm_updateUI.Interval = 200;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -218,7 +219,6 @@
             this.MinimumSize = new System.Drawing.Size(750, 400);
             this.Name = "MainForm";
             this.Text = "Xlsx Exporter";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this._dgv_task)).EndInit();
             this.ResumeLayout(false);

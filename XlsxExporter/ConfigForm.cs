@@ -16,7 +16,7 @@ namespace XlsxExporter
             _tb_exportDir.Text = Config.ExportDir;
             _rb_tText.Checked = Config.ExportType == ExportType.Text;
             _rb_tBinary.Checked = Config.ExportType == ExportType.Binary;
-            _cb_exportThCnt.SelectedIndex = Config.ExportThreadCount - 1;
+            _cb_exportThCnt.Text = Config.ExportThreadCount + "";
         }
 
         private void FolderBrowser(object sender, EventArgs e)
@@ -78,7 +78,7 @@ namespace XlsxExporter
             Config.ExportDir = _tb_exportDir.Text;
             if (_rb_tText.Checked) Config.ExportType = ExportType.Text;
             else if (_rb_tBinary.Checked) Config.ExportType = ExportType.Binary;
-            Config.ExportThreadCount = _cb_exportThCnt.SelectedIndex + 1;
+            Config.ExportThreadCount = int.Parse(_cb_exportThCnt.Text);
             Config.Save();
         }
     }

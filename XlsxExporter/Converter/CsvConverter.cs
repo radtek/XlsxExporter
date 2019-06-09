@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ namespace XlsxExporter.Converter
     class CsvConverter : Converter
     {
         private Dictionary<string, Dictionary<string, string>> _csvData = new Dictionary<string, Dictionary<string, string>>();
-        public override void Convert(Dictionary<string, Dictionary<string, List<List<XlsxTextCell>>>> xlsxData, Action onCompleted, IProgresser view)
+        public override void Convert(Dictionary<string, Dictionary<string, List<List<XlsxTextCell>>>> xlsxData, OnCompletedHandler onCompleted, OnStatusHandler onStatus)
         {
             _csvData.Clear();
             if (xlsxData == null) return;
@@ -27,7 +28,7 @@ namespace XlsxExporter.Converter
             }
 
             bool isOnCompletedCalled = false;
-            ThreadStart readAsync = delegate
+            ThreadStart convertAsync = delegate
             {
                 foreach (var xlsx in xlsxData)
                 {
@@ -36,15 +37,15 @@ namespace XlsxExporter.Converter
 
                     if (xlsxStatus[file] == 0)
                     {
-                        xlsxStatus[file] = 1;     
+                        xlsxStatus[file] = 1;
 
-                        view?.OnProgress(null, "正在转换CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
+                        onStatus?.Invoke(null, "正在转换CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
                         int sheetCount = 0;
                         foreach (var sheet in data)
                         {
                             ++sheetCount;
                             int cellCount = 0, sheetCellCount = 0;
-                            foreach(var row in sheet.Value)
+                            foreach (var row in sheet.Value)
                                 sheetCellCount += row.Count;
 
                             StringBuilder expr = new StringBuilder();
@@ -65,7 +66,7 @@ namespace XlsxExporter.Converter
                                     expr.Append(value);
 
                                     ++cellCount;
-                                    view?.OnProgress(file, "正在转换CSV", "文件进度：" + sheetCount + "/" + data.Count + ", 表格：" + sheet.Key + ", 进度：" + (int)(cellCount * 100.0 / sheetCellCount) + " %");
+                                    onStatus?.Invoke(file, "正在转换CSV", "文件进度：" + sheetCount + "/" + data.Count + ", 表格：" + sheet.Key + ", 进度：" + (int)(cellCount * 100.0 / sheetCellCount) + " %");
                                 }
                                 expr.Append('\n');
                             }
@@ -74,23 +75,27 @@ namespace XlsxExporter.Converter
                         }
 
                         xlsxStatus[file] = 2;
-                        view?.OnProgress(file, "转换CSV完成", null);
-                        view?.OnProgress(null, "正在转换CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
+                        onStatus?.Invoke(file, "转换CSV完成", null);
+                        onStatus?.Invoke(null, "正在转换CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
                     }
                 }
                 if (xlsxStatus.ToArray().Count(e => e.Value == 2) == xlsxStatus.Count && !isOnCompletedCalled)
                 {
                     isOnCompletedCalled = true;
-                    Save(onCompleted, view);
-                    view?.OnProgress(null, "转换CSV完成", null);
+                    Save(onCompleted, onStatus);
+                    onStatus?.Invoke(null, "转换CSV完成", null);
                 }
             };
 
             for (int i = 0; i < Config.ExportThreadCount; ++i)
-                new Thread(readAsync).Start();
+            {
+                var thread = new Thread(convertAsync);
+                thread.IsBackground = true;
+                thread.Start();
+            }
         }
 
-        protected override void Save(Action onCompleted, IProgresser view)
+        protected override void Save(OnCompletedHandler onCompleted, OnStatusHandler onStatus)
         {
             /**
              * 文件的读取状态，0 未保存，1 在保存，2 已保存
@@ -99,23 +104,32 @@ namespace XlsxExporter.Converter
             foreach (var xlsx in _csvData)
                 xlsxStatus.Add(xlsx.Key, 0);
 
-            ThreadStart readAsync = delegate
+            string error = null;
+            List<Thread> saveThreads = new List<Thread>();
+            ThreadStart saveAsync = delegate
             {
                 foreach (var xlsx in _csvData)
                 {
+                    if (error != null) return;
+
                     string file = xlsx.Key;
                     if (xlsxStatus[file] == 0)
                     {
                         xlsxStatus[file] = 1;
 
-                        view?.OnProgress(null, "正在保存CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
+                        onStatus?.Invoke(null, "正在保存CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
                         int sheetCount = 0;
-                        bool isError = false;
                         foreach (var sheet in xlsx.Value)
                         {
                             ++sheetCount;
+                            onStatus?.Invoke(file, "正在保存CSV", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + ", 进度：正在保存...");
 
-                            view?.OnProgress(file, "正在保存CSV", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + ", 进度：正在保存...");
+                            if (error != null)
+                            {
+                                onStatus?.Invoke(file, "保存CSV中断", null);
+                                return;
+                            }
+
                             try
                             {
                                 using (StreamWriter writer = new StreamWriter(Config.ExportDir + "/" + sheet.Key + ".csv"))
@@ -125,28 +139,48 @@ namespace XlsxExporter.Converter
                             }
                             catch (Exception e)
                             {
-                                isError = true;
-                                view?.OnProgress(file, "正在保存CSV", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + ", 进度：保存失败, " + e.Message);
-                                break;
+                                if (error != null)
+                                {
+                                    onStatus?.Invoke(file, "保存CSV中断", null);
+                                    return;
+                                }
+
+                                error = e.Message;
+                                onStatus?.Invoke(file, "保存CSV出错", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + "保存失败: " + e.Message, true);
+                                onStatus?.Invoke(null, "保存CSV出错。文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + "保存失败: " + e.Message, null, true);
+
+                                Debug.Print("保存CSV中断, 等待线程结束，剩余线程个数：" + saveThreads.Count(thread => thread.IsAlive));
+                                while (saveThreads.Count(thread => thread.IsAlive) > 1) /** 等待其他线程结束 */;
+
+                                onCompleted?.Invoke(false);
+                                onCompleted = null;
+                                return;
                             }
-                            view?.OnProgress(file, "正在保存CSV", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + ", 进度：保存完成");
+                            onStatus?.Invoke(file, "正在保存CSV", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + ", 进度：保存完成");
                         }
 
                         xlsxStatus[file] = 2;
-                        view?.OnProgress(file, isError ? "保存CSV中断" : "保存CSV完成", null);
-                        view?.OnProgress(null, "正在保存CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
+                        onStatus?.Invoke(file, "保存CSV完成", null);
+                        onStatus?.Invoke(null, "正在保存CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
                     }
                 }
                 if (xlsxStatus.ToArray().Count(e => e.Value == 2) == xlsxStatus.Count)
                 {
-                    view?.OnProgress(null, "转换CSV完成", null);
-                    onCompleted?.Invoke();
+                    Debug.Print("保存CSV完成, 剩余线程个数：" + saveThreads.Count(thread => thread.IsAlive));
+                    onStatus?.Invoke(null, "保存CSV完成", null);
+
+                    onCompleted?.Invoke(true);
                     onCompleted = null;
                 }
             };
 
             for (int i = 0; i < Config.ExportThreadCount; ++i)
-                new Thread(readAsync).Start();
+            {
+                var thread = new Thread(saveAsync);
+                thread.IsBackground = true;
+                saveThreads.Add(thread);
+                thread.Start();
+            }
         }
     }
 }

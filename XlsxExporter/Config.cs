@@ -30,7 +30,7 @@ namespace XlsxExporter
         /// <summary>
         /// 输出线程数
         /// </summary>
-        public static int ExportThreadCount { get; set; } = 1;
+        public static int ExportThreadCount { get; set; } = 15;
 
         /// <summary>
         /// 读取配置

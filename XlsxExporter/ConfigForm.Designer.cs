@@ -32,25 +32,25 @@
             System.Windows.Forms.Label label2;
             System.Windows.Forms.GroupBox groupBox1;
             System.Windows.Forms.GroupBox groupBox2;
+            System.Windows.Forms.Label label4;
             System.Windows.Forms.Panel panel1;
             System.Windows.Forms.Label label3;
-            System.Windows.Forms.Label label4;
             this._btn_inputBrowse = new System.Windows.Forms.Button();
             this._tb_importDir = new System.Windows.Forms.TextBox();
+            this._cb_exportThCnt = new System.Windows.Forms.ComboBox();
             this._rb_tText = new System.Windows.Forms.RadioButton();
             this._rb_tBinary = new System.Windows.Forms.RadioButton();
             this._btn_outBrowse = new System.Windows.Forms.Button();
             this._tb_exportDir = new System.Windows.Forms.TextBox();
             this._btn_cancel = new System.Windows.Forms.Button();
             this._btn_save = new System.Windows.Forms.Button();
-            this._cb_exportThCnt = new System.Windows.Forms.ComboBox();
             label1 = new System.Windows.Forms.Label();
             label2 = new System.Windows.Forms.Label();
             groupBox1 = new System.Windows.Forms.GroupBox();
             groupBox2 = new System.Windows.Forms.GroupBox();
+            label4 = new System.Windows.Forms.Label();
             panel1 = new System.Windows.Forms.Panel();
             label3 = new System.Windows.Forms.Label();
-            label4 = new System.Windows.Forms.Label();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             panel1.SuspendLayout();
@@ -124,6 +124,48 @@
             groupBox2.TabIndex = 2;
             groupBox2.TabStop = false;
             groupBox2.Text = "输出";
+            // 
+            // label4
+            // 
+            label4.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            label4.AutoSize = true;
+            label4.Location = new System.Drawing.Point(286, 59);
+            label4.Name = "label4";
+            label4.Size = new System.Drawing.Size(47, 12);
+            label4.TabIndex = 5;
+            label4.Text = "线程数:";
+            // 
+            // _cb_exportThCnt
+            // 
+            this._cb_exportThCnt.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this._cb_exportThCnt.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this._cb_exportThCnt.FormattingEnabled = true;
+            this._cb_exportThCnt.Items.AddRange(new object[] {
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20"});
+            this._cb_exportThCnt.Location = new System.Drawing.Point(335, 55);
+            this._cb_exportThCnt.MaxDropDownItems = 10;
+            this._cb_exportThCnt.Name = "_cb_exportThCnt";
+            this._cb_exportThCnt.Size = new System.Drawing.Size(59, 20);
+            this._cb_exportThCnt.TabIndex = 4;
             // 
             // panel1
             // 
@@ -209,38 +251,6 @@
             this._btn_save.Text = "保存";
             this._btn_save.UseVisualStyleBackColor = true;
             this._btn_save.Click += new System.EventHandler(this._btn_save_Click);
-            // 
-            // _cb_exportThCnt
-            // 
-            this._cb_exportThCnt.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this._cb_exportThCnt.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this._cb_exportThCnt.FormattingEnabled = true;
-            this._cb_exportThCnt.Items.AddRange(new object[] {
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10"});
-            this._cb_exportThCnt.Location = new System.Drawing.Point(335, 55);
-            this._cb_exportThCnt.MaxDropDownItems = 10;
-            this._cb_exportThCnt.Name = "_cb_exportThCnt";
-            this._cb_exportThCnt.Size = new System.Drawing.Size(59, 20);
-            this._cb_exportThCnt.TabIndex = 4;
-            // 
-            // label4
-            // 
-            label4.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            label4.AutoSize = true;
-            label4.Location = new System.Drawing.Point(286, 59);
-            label4.Name = "label4";
-            label4.Size = new System.Drawing.Size(47, 12);
-            label4.TabIndex = 5;
-            label4.Text = "线程数:";
             // 
             // ConfigForm
             // 
