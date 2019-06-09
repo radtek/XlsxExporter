@@ -54,6 +54,8 @@
     <Compile Include="ConfigForm.Designer.cs">
       <DependentUpon>ConfigForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Converter\CsvConverter.cs" />
+    <Compile Include="Converter\Converter.cs" />
     <Compile Include="Exporter.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

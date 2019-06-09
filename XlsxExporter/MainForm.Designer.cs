@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.Windows.Forms.Label label1;
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this._btn_editConfig = new System.Windows.Forms.Button();
@@ -39,6 +40,10 @@
             this._pb_progress = new System.Windows.Forms.ProgressBar();
             this._lb_progressText = new System.Windows.Forms.Label();
             this._dgv_task = new System.Windows.Forms.DataGridView();
+            this._tm_updateUI = new System.Windows.Forms.Timer(this.components);
+            this._ch_name = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this._ch_status = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this._ch_progress = new System.Windows.Forms.DataGridViewTextBoxColumn();
             label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this._dgv_task)).BeginInit();
             this.SuspendLayout();
@@ -147,6 +152,10 @@
             this._dgv_task.BackgroundColor = System.Drawing.SystemColors.Control;
             this._dgv_task.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this._dgv_task.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this._dgv_task.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this._ch_name,
+            this._ch_status,
+            this._ch_progress});
             dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
             dataGridViewCellStyle1.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
@@ -163,8 +172,33 @@
             this._dgv_task.RowTemplate.Height = 23;
             this._dgv_task.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this._dgv_task.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this._dgv_task.Size = new System.Drawing.Size(735, 377);
+            this._dgv_task.Size = new System.Drawing.Size(735, 380);
             this._dgv_task.TabIndex = 7;
+            // 
+            // _tm_updateUI
+            // 
+            this._tm_updateUI.Enabled = true;
+            // 
+            // _ch_name
+            // 
+            this._ch_name.FillWeight = 25F;
+            this._ch_name.HeaderText = "名 称";
+            this._ch_name.Name = "_ch_name";
+            this._ch_name.ReadOnly = true;
+            // 
+            // _ch_status
+            // 
+            this._ch_status.FillWeight = 15F;
+            this._ch_status.HeaderText = "状 态";
+            this._ch_status.Name = "_ch_status";
+            this._ch_status.ReadOnly = true;
+            // 
+            // _ch_progress
+            // 
+            this._ch_progress.FillWeight = 60F;
+            this._ch_progress.HeaderText = "进 度";
+            this._ch_progress.Name = "_ch_progress";
+            this._ch_progress.ReadOnly = true;
             // 
             // MainForm
             // 
@@ -202,6 +236,10 @@
         private System.Windows.Forms.ProgressBar _pb_progress;
         private System.Windows.Forms.Label _lb_progressText;
         private System.Windows.Forms.DataGridView _dgv_task;
+        private System.Windows.Forms.Timer _tm_updateUI;
+        private System.Windows.Forms.DataGridViewTextBoxColumn _ch_name;
+        private System.Windows.Forms.DataGridViewTextBoxColumn _ch_status;
+        private System.Windows.Forms.DataGridViewTextBoxColumn _ch_progress;
     }
 }
 
