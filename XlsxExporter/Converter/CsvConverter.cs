@@ -54,16 +54,18 @@ namespace XlsxExporter.Converter
                                 bool isFirstCell = true;
                                 foreach (var cell in row)
                                 {
-                                    string value = cell.Value;
+                                    StringBuilder value = new StringBuilder(cell.Value);
                                     //字段中若包含回车换行符、双引号或者逗号，该字段需要用双引号括起来。
-                                    if (value.IndexOf(',') != -1 || value.IndexOf('"') != -1 || value.IndexOf('\r') != -1 || value.IndexOf('\n') != -1)
+                                    if (cell.Value.IndexOf(',') != -1 || cell.Value.IndexOf('"') != -1 || cell.Value.IndexOf('\r') != -1 || cell.Value.IndexOf('\n') != -1)
                                     {
-                                        value = value.Replace("\"", "\"\"");
-                                        value = '"' + value + '"';
+                                        value.Replace("\"", "\"\"");
+                                        value.Insert(0, '"');
+                                        value.Append('"');
                                     }
+
                                     if (!isFirstCell) expr.Append(',');
                                     else isFirstCell = false;
-                                    expr.Append(value);
+                                    expr.Append(value.ToString());
 
                                     ++cellCount;
                                     onStatus?.Invoke(file, "正在转换CSV", "文件进度：" + sheetCount + "/" + data.Count + ", 表格：" + sheet.Key + ", 进度：" + (int)(cellCount * 100.0 / sheetCellCount) + " %");
@@ -87,7 +89,7 @@ namespace XlsxExporter.Converter
                 }
             };
 
-            for (int i = 0; i < Config.ExportThreadCount; ++i)
+            for (int i = 0; i < Math.Min(Config.ExportThreadCount, xlsxStatus.Keys.Count); ++i)
             {
                 var thread = new Thread(convertAsync);
                 thread.IsBackground = true;
@@ -174,7 +176,7 @@ namespace XlsxExporter.Converter
                 }
             };
 
-            for (int i = 0; i < Config.ExportThreadCount; ++i)
+            for (int i = 0; i < Math.Min(Config.ExportThreadCount, xlsxStatus.Keys.Count); ++i)
             {
                 var thread = new Thread(saveAsync);
                 thread.IsBackground = true;

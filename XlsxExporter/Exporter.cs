@@ -159,7 +159,7 @@ namespace XlsxExporter
                 }
             };
 
-            for (int i = 0; i < Config.ExportThreadCount; ++i)
+            for (int i = 0; i < Math.Min(Config.ExportThreadCount, xlsxStatus.Keys.Count); ++i)
             {
                 var thread = new Thread(readAsync);
                 thread.IsBackground = true;
