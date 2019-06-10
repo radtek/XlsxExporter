@@ -19,24 +19,25 @@ namespace XlsxExporter
         /// </summary>
         private Dictionary<string, Dictionary<string, List<List<XlsxTextCell>>>> _xlsxData = new Dictionary<string, Dictionary<string, List<List<XlsxTextCell>>>>();
         /// <summary>
-        /// 进度视图
-        /// </summary>
-        /// <summary>
         /// 加载
         /// </summary>
-        public void Load(OnStatusHandler onStatus)
+        public List<string> Load(OnStatusHandler onStatus)
         {
+            List<string> files = new List<string>();
             _xlsxData.Clear();
             var importDir = new DirectoryInfo(Config.ImportDir);
             if (importDir.Exists)
             {
                 foreach (var fileInfo in importDir.GetFiles("*.xlsx"))
                 {
-                    _xlsxData.Add(fileInfo.FullName, new Dictionary<string, List<List<XlsxTextCell>>>());
+                    files.Add(fileInfo.FullName);
+                    _xlsxData.Add(fileInfo.FullName, new Dictionary<string, List<List<XlsxTextCell>>>());   
                     onStatus?.Invoke(fileInfo.FullName, "就绪", "");
                 }
             }
-            onStatus?.Invoke(null, "就绪", "0");
+            onStatus?.Invoke(null, "载入完成。一共" + files.Count + "个文件", "0");
+
+            return files;
         }
 
         /// <summary>
@@ -48,18 +49,22 @@ namespace XlsxExporter
             Stopwatch sw = new Stopwatch();
             sw.Start();
 #endif
-            Read(isOk1 =>
+            Read(readResult =>
             {
-                if (isOk1)
+                if (readResult)
                 {
-                    new CsvConverter().Convert(_xlsxData, isOk2 =>
+                    new CsvConverter().Convert(_xlsxData, csvConvertResult =>
                     {
-                        onCompleted?.Invoke(isOk2);
+                        onCompleted?.Invoke(csvConvertResult);
 #if DEBUG
                         sw.Stop();
                         Debug.Print("读取完成！总共花费" + sw.Elapsed.TotalMilliseconds + "ms");
 #endif
                     }, onStatus);
+                }
+                else
+                {
+                    onCompleted?.Invoke(readResult);  
                 }
             }, onStatus);
         }
@@ -101,23 +106,46 @@ namespace XlsxExporter
                                 {
                                     ++sheetCount;
                                     List<List<XlsxTextCell>> sheet = new List<List<XlsxTextCell>>();
+                                    List<XlsxTextCell> header = null;
                                     long cellCount = 0;
                                     XlsxTextSheetReader sheetReader = xlsxReader.SheetReader;
+                                    int minCol = 0, maxCol = int.MaxValue;
                                     while (sheetReader.Read())
                                     {
-                                        List<XlsxTextCell> row = new List<XlsxTextCell>();
-                                        foreach (var cell in sheetReader.Row)
-                                        {
-                                            row.Add(cell);
-                                            ++cellCount;
-                                            onStatus?.Invoke(file, "正在读取", "文件进度：" + sheetCount + "/" + xlsxReader.SheetsCount + ", 表格：" + sheetReader.Name + ", 进度：" + (int)(cellCount * 100.0 / sheetReader.CellCount) + " %");
+                                        if (sheetReader.Row.Count == 0) continue;
 
+                                        List<XlsxTextCell> row = new List<XlsxTextCell>();
+                                        int col = minCol == 0 ? sheetReader.Row[0].Col : minCol;
+                                        foreach (var cell in sheetReader.Row)
+                                        { 
                                             if (error != null)
                                             {
                                                 onStatus?.Invoke(file, "读取中断", null);
                                                 return;
                                             }
+
+                                            if (cell.Col < minCol)  continue;   // 未到范围
+                                            if (cell.Col > maxCol)  break;      // 超过范围
+
+                                            if (header == null)    // 列的起止
+                                            {
+                                                if (minCol == 0) minCol = cell.Col;
+                                                if (cell.Col != col) maxCol = col - 1;
+                                            }
+                                            else if (cell.Col != col)   // 有空的单元格
+                                            {
+                                                throw new Exception("单元格" + XlsxTextCellReference.RowColToValue(cell.Row, col) + "为空");
+                                            }
+                                            ++col;
+
+                                            row.Add(cell);
+                                            ++cellCount;
+
+                                            onStatus?.Invoke(file, "正在读取", "文件进度：" + sheetCount + "/" + xlsxReader.SheetsCount + ", 表格：" + sheetReader.Name + ", 进度：" + (int)(cellCount * 100.0 / sheetReader.CellCount) + " %");
                                         }
+
+                                        if (header == null) header = row;
+
                                         sheet.Add(row);
                                     }
                                     data.Add(sheetReader.Name, sheet);

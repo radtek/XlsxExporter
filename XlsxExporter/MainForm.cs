@@ -8,9 +8,8 @@ namespace XlsxExporter
 {
     public partial class MainForm : Form
     {
-
-        public DataGridViewRowCollection Rows => _dgv_task.Rows;
-        public Exporter _exporter;
+        public Dictionary<string, DataGridViewRow> Rows { get; private set; } = new Dictionary<string, DataGridViewRow>();
+        private Exporter _exporter;
 
         public MainForm()
         {
@@ -25,7 +24,8 @@ namespace XlsxExporter
             _tb_exportDir.Text = Config.ExportDir;
 
             _tm_updateUI.Tick += new EventHandler((_, _1) => UpdateUI());
-            _exporter.Load(OnStatus);
+
+            reload();
         }
 
         private void _btn_outBrowse_Click(object sender, EventArgs e)
@@ -66,7 +66,15 @@ namespace XlsxExporter
         private void reload()
         {
             Rows.Clear();
-            _exporter.Load(OnStatus);
+            _dgv_task.Rows.Clear();
+            foreach(var file in _exporter.Load(OnStatus))
+            {
+                var row = _dgv_task.Rows[_dgv_task.Rows.Add()];
+                row.Cells[0].Value = Path.GetFileName(file);
+                Rows.Add(file, row);
+            }
+
+            _btn_export.Enabled = Rows.Count > 0;
         }
 
         private Dictionary<string, string[/*6*/]> progressCache = new Dictionary<string, string[/*6*/]>();
@@ -93,25 +101,13 @@ namespace XlsxExporter
                 string file = data[0], status = data[1], progress = data[2], error = data[3];
                 if (file != "")
                 {
-                    string name = Path.GetFileName(file);
-                    DataGridViewRow row = null;
-                    foreach (DataGridViewRow r in Rows)
+                    if (Rows.TryGetValue(file, out DataGridViewRow row))
                     {
-                        if ((string)r.Cells[0].Value == name)
-                        {
-                            row = r;
-                            break;
-                        }
+                        if (status != null) row.Cells[1].Value = status;
+                        if (progress != null) row.Cells[2].Value = progress;
+                        if (error == true.ToString()) row.DefaultCellStyle.ForeColor = Color.Red;
+                        else if (error == false.ToString()) row.DefaultCellStyle.ForeColor = Color.Black;
                     }
-                    if (row == null)
-                    {
-                        row = Rows[Rows.Add()];
-                        row.Cells[0].Value = name;
-                    }
-                    if (status != null) row.Cells[1].Value = status;
-                    if (progress != null) row.Cells[2].Value = progress;
-                    if (error == true.ToString()) row.DefaultCellStyle.ForeColor = Color.Red;
-                    else if (error == false.ToString()) row.DefaultCellStyle.ForeColor = Color.Black;
                 }
                 else
                 {
