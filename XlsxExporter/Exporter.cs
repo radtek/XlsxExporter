@@ -107,13 +107,11 @@ namespace XlsxExporter
                                     ++sheetCount;
                                     List<List<XlsxTextCell>> sheet = new List<List<XlsxTextCell>>();
                                     List<XlsxTextCell> header = null;
-                                    long cellCount = 0;
+
                                     XlsxTextSheetReader sheetReader = xlsxReader.SheetReader;
-                                    int minCol = 0, maxCol = int.MaxValue;
+                                    int rowCount = 0, minCol = 0, maxCol = int.MaxValue;
                                     while (sheetReader.Read())
                                     {
-                                        if (sheetReader.Row.Count == 0) continue;
-
                                         List<XlsxTextCell> row = new List<XlsxTextCell>();
                                         int col = minCol == 0 ? sheetReader.Row[0].Col : minCol;
                                         foreach (var cell in sheetReader.Row)
@@ -139,14 +137,16 @@ namespace XlsxExporter
                                             ++col;
 
                                             row.Add(cell);
-                                            ++cellCount;
-
-                                            onStatus?.Invoke(file, "正在读取", "文件进度：" + sheetCount + "/" + xlsxReader.SheetsCount + ", 表格：" + sheetReader.Name + ", 进度：" + (int)(cellCount * 100.0 / sheetReader.CellCount) + " %");
                                         }
 
-                                        if (header == null) header = row;
+                                        ++rowCount; 
+                                        onStatus?.Invoke(file, "正在读取", "文件进度：" + sheetCount + "/" + xlsxReader.SheetsCount + ", 表格：" + sheetReader.Name + ", 进度：" + (int)(rowCount * 100.0 / sheetReader.RowCount) + " %");
 
-                                        sheet.Add(row);
+                                        if (row.Count > 0)
+                                        {
+                                            if (header == null) header = row;
+                                            sheet.Add(row);
+                                        }
                                     }
                                     data.Add(sheetReader.Name, sheet);
                                 }
