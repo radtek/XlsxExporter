@@ -66,7 +66,7 @@
             this._btn_editConfig.TabIndex = 3;
             this._btn_editConfig.Text = "修改配置";
             this._btn_editConfig.UseVisualStyleBackColor = true;
-            this._btn_editConfig.Click += new System.EventHandler(this._btn_editConfig_Click);
+            this._btn_editConfig.Click += new System.EventHandler(this.OnBtnClick);
             // 
             // _btn_reloadConfig
             // 
@@ -77,7 +77,7 @@
             this._btn_reloadConfig.TabIndex = 4;
             this._btn_reloadConfig.Text = "重新载入";
             this._btn_reloadConfig.UseVisualStyleBackColor = true;
-            this._btn_reloadConfig.Click += new System.EventHandler(this._btn_reloadConfig_Click);
+            this._btn_reloadConfig.Click += new System.EventHandler(this.OnBtnClick);
             // 
             // _btn_export
             // 
@@ -88,7 +88,7 @@
             this._btn_export.TabIndex = 5;
             this._btn_export.Text = "开始输出";
             this._btn_export.UseVisualStyleBackColor = true;
-            this._btn_export.Click += new System.EventHandler(this._btn_export_Click);
+            this._btn_export.Click += new System.EventHandler(this.OnBtnClick);
             // 
             // _tb_exportDir
             // 
@@ -108,7 +108,7 @@
             this._btn_outBrowse.TabIndex = 2;
             this._btn_outBrowse.Text = "浏览";
             this._btn_outBrowse.UseVisualStyleBackColor = true;
-            this._btn_outBrowse.Click += new System.EventHandler(this._btn_outBrowse_Click);
+            this._btn_outBrowse.Click += new System.EventHandler(this.OnBtnClick);
             // 
             // _lb_status
             // 
@@ -219,7 +219,7 @@
             this.MinimumSize = new System.Drawing.Size(750, 400);
             this.Name = "MainForm";
             this.Text = "Xlsx Exporter";
-            this.Load += new System.EventHandler(this.MainForm_Load);
+            this.Load += new System.EventHandler(this.OnMainFormLoad);
             ((System.ComponentModel.ISupportInitialize)(this._dgv_task)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

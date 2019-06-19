@@ -1,188 +1,122 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using XlsxText;
 
 namespace XlsxExporter.Converter
 {
-    class CsvConverter : Converter
+    /**
+     * bool   ==> bool
+     * uint8  ==> byte,   int8    ==> sbyte
+     * uint16 ==> ushort, int16   ==> short
+     * uint32 ==> uint,   int32   ==> int
+     * uint64 ==> ulong,  int64   ==> long
+     * float  ==> float,  float64 ==> double
+     * string ==> string,
+     */
+    //using bool = System.Boolean;
+    using uint8 = System.Byte;
+    using int8 = System.SByte;
+    using uint16 = System.UInt16;
+    using int16 = System.Int16;
+    using uint32 = System.UInt32;
+    using int32 = System.Int32;
+    using uint64 = System.UInt64;
+    using int64 = System.Int64;
+    //using float = System.Single;
+    using float64 = System.Double;
+    //using string = System.String;
+
+    public class CsvConverter : Converter
     {
-        private Dictionary<string, Dictionary<string, string>> _csvData = new Dictionary<string, Dictionary<string, string>>();
-        public override void Convert(Dictionary<string, Dictionary<string, List<List<XlsxTextCell>>>> xlsxData, OnCompletedHandler onCompleted, OnStatusHandler onStatus)
+        /// <summary>
+        /// CsvConverter
+        /// </summary>
+        /// <param name="path">工作簿路径</param>
+        /// <param name="name">工作表名字</param>
+        public CsvConverter(string path, string name, string progressFormat = "{0}") : base(path, name, progressFormat) { }
+
+        public override bool Convert(List<List<object>> sheet, out string content, OnStatusHandler onStatus = null)
         {
-            _csvData.Clear();
-            if (xlsxData == null) return;
+            content = "";
 
-            /**
-             * 文件的读取状态，0 未转，1 在转，2 转完
-             */
-            Dictionary<string, int> xlsxStatus = new Dictionary<string, int>();
-            foreach (var xlsx in xlsxData)
-            {
-                xlsxStatus.Add(xlsx.Key, 0);
-                _csvData.Add(xlsx.Key, new Dictionary<string, string>());
-            }
 
-            bool isOnCompletedCalled = false;
-            ThreadStart convertAsync = delegate
+            int rowIndex = 0;
+            onStatus?.Invoke(Path, "正在处理", string.Format(ProgressFormat, "0%"));
+            StringBuilder data = new StringBuilder();
+            foreach (var row in sheet)
             {
-                foreach (var xlsx in xlsxData)
+                StringBuilder rowData = new StringBuilder();
+                foreach (var cell in row)
                 {
-                    string file = xlsx.Key;
-                    Dictionary<string, List<List<XlsxTextCell>>> data = xlsx.Value;
-
-                    if (xlsxStatus[file] == 0)
+                    string value = "";
+                    if (cell is bool)
                     {
-                        xlsxStatus[file] = 1;
-
-                        onStatus?.Invoke(null, "正在转换CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
-                        int sheetCount = 0;
-                        foreach (var sheet in data)
-                        {
-                            ++sheetCount;
-                            int cellCount = 0, sheetCellCount = 0;
-                            foreach (var row in sheet.Value)
-                                sheetCellCount += row.Count;
-
-                            StringBuilder expr = new StringBuilder();
-                            foreach (var row in sheet.Value)
-                            {
-                                bool isFirstCell = true;
-                                foreach (var cell in row)
-                                {
-                                    StringBuilder value = new StringBuilder(cell.Value);
-                                    //字段中若包含回车换行符、双引号或者逗号，该字段需要用双引号括起来。
-                                    if (cell.Value.IndexOf(',') != -1 || cell.Value.IndexOf('"') != -1 || cell.Value.IndexOf('\r') != -1 || cell.Value.IndexOf('\n') != -1)
-                                    {
-                                        value.Replace("\"", "\"\"");
-                                        value.Insert(0, '"');
-                                        value.Append('"');
-                                    }
-
-                                    if (!isFirstCell) expr.Append(',');
-                                    else isFirstCell = false;
-                                    expr.Append(value.ToString());
-
-                                    ++cellCount;
-                                    onStatus?.Invoke(file, "正在转换CSV", "文件进度：" + sheetCount + "/" + data.Count + ", 表格：" + sheet.Key + ", 进度：" + (int)(cellCount * 100.0 / sheetCellCount) + " %");
-                                }
-                                expr.Append('\n');
-                            }
-                            if (expr.Length > 0)
-                                _csvData[file].Add(sheet.Key, expr.ToString());
-                        }
-
-                        xlsxStatus[file] = 2;
-                        onStatus?.Invoke(file, "转换CSV完成", null);
-                        onStatus?.Invoke(null, "正在转换CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
+                        value = (bool)cell ? "1" : "0";
                     }
-                }
-                if (xlsxStatus.ToArray().Count(e => e.Value == 2) == xlsxStatus.Count && !isOnCompletedCalled)
-                {
-                    isOnCompletedCalled = true;
-                    Save(onCompleted, onStatus);
-                    onStatus?.Invoke(null, "转换CSV完成", null);
-                }
-            };
-
-            for (int i = 0; i < Math.Min(Config.ExportThreadCount, xlsxStatus.Keys.Count); ++i)
-            {
-                var thread = new Thread(convertAsync);
-                thread.IsBackground = true;
-                thread.Start();
-            }
-        }
-
-        protected override void Save(OnCompletedHandler onCompleted, OnStatusHandler onStatus)
-        {
-            /**
-             * 文件的读取状态，0 未保存，1 在保存，2 已保存
-             */
-            Dictionary<string, int> xlsxStatus = new Dictionary<string, int>();
-            foreach (var xlsx in _csvData)
-                xlsxStatus.Add(xlsx.Key, 0);
-
-            string error = null;
-            List<Thread> saveThreads = new List<Thread>();
-            ThreadStart saveAsync = delegate
-            {
-                foreach (var xlsx in _csvData)
-                {
-                    if (error != null) return;
-
-                    string file = xlsx.Key;
-                    if (xlsxStatus[file] == 0)
+                    else if (cell is bool[])
                     {
-                        xlsxStatus[file] = 1;
-
-                        onStatus?.Invoke(null, "正在保存CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0 / xlsxStatus.Count + "");
-                        int sheetCount = 0;
-                        foreach (var sheet in xlsx.Value)
+                        foreach (var subRawValue in (bool[])cell)
                         {
-                            ++sheetCount;
-                            onStatus?.Invoke(file, "正在保存CSV", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + ", 进度：正在保存...");
-
-                            if (error != null)
-                            {
-                                onStatus?.Invoke(file, "保存CSV中断", null);
-                                return;
-                            }
-
-                            try
-                            {
-                                using (StreamWriter writer = new StreamWriter(Config.ExportDir + "/" + sheet.Key + ".csv"))
-                                {
-                                    writer.Write(sheet.Value);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                if (error != null)
-                                {
-                                    onStatus?.Invoke(file, "保存CSV中断", null);
-                                    return;
-                                }
-
-                                error = e.Message;
-                                onStatus?.Invoke(file, "保存CSV出错", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + "保存失败: " + e.Message, true);
-                                onStatus?.Invoke(null, "保存CSV出错。文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + "保存失败: " + e.Message, null, true);
-
-                                Debug.Print("保存CSV中断, 等待线程结束，剩余线程个数：" + saveThreads.Count(thread => thread.IsAlive));
-                                while (saveThreads.Count(thread => thread.IsAlive) > 1) /** 等待其他线程结束 */;
-
-                                onCompleted?.Invoke(false);
-                                onCompleted = null;
-                                return;
-                            }
-                            onStatus?.Invoke(file, "正在保存CSV", "文件进度：" + sheetCount + "/" + xlsx.Value.Count + ", 表格：" + sheet.Key + ", 进度：保存完成");
+                            if (value.Length > 0) value += ",";
+                            value += subRawValue ? "1" : "0";
                         }
-
-                        xlsxStatus[file] = 2;
-                        onStatus?.Invoke(file, "保存CSV完成", null);
-                        onStatus?.Invoke(null, "正在保存CSV... ", xlsxStatus.ToArray().Count(e => e.Value == 2) * 1.0f / xlsxStatus.Count + "");
+                        if (value.Length > 0) value = '"' + value + '"';
                     }
-                }
-                if (xlsxStatus.ToArray().Count(e => e.Value == 2) == xlsxStatus.Count)
-                {
-                    Debug.Print("保存CSV完成, 剩余线程个数：" + saveThreads.Count(thread => thread.IsAlive));
-                    onStatus?.Invoke(null, "保存CSV完成", null);
+                    else if (cell is uint8 || cell is int8
+                        || cell is uint16 || cell is int16
+                        || cell is uint32 || cell is int32
+                        || cell is uint64 || cell is int64
+                        || cell is float || cell is float64)
+                    {
+                        value = cell.ToString();
+                    }
+                    else if (cell is uint8[] || cell is int8[]
+                        || cell is uint16[] || cell is int16[]
+                        || cell is uint32[] || cell is int32[]
+                        || cell is uint64[] || cell is int64[]
+                        || cell is float[] || cell is float64[])
+                    {
+                        foreach (var subRawValue in (Array)cell)
+                        {
+                            if (value.Length > 0) value += ",";
+                            value += subRawValue.ToString();
+                        }
+                        if (value.Length > 0) value = '"' + value + '"';
+                    }
+                    else if (cell is string)
+                    {
+                        string rawValue = (string)cell;
+                        if (rawValue.IndexOf(',') != -1 || rawValue.IndexOf('"') != -1 || rawValue.IndexOf('\r') != -1 || rawValue.IndexOf('\n') != -1)
+                            value = '"' + rawValue.Replace("\"", "\"\"") + '"';
+                        else
+                            value = rawValue;
+                    }
+                    else if (cell is string[])
+                    {
+                        foreach (var subRawValue in (string[])cell)
+                        {
+                            if (value.Length > 0) value += ",";
+                            if (subRawValue.IndexOf(',') != -1 || subRawValue.IndexOf('"') != -1 || subRawValue.IndexOf('\r') != -1 || subRawValue.IndexOf('\n') != -1)
+                                value += subRawValue.Replace("\"", "\"\"");
+                            else
+                                value += subRawValue;
+                        }
+                        if (value.Length > 0) value = '"' + value + '"';
+                    }
 
-                    onCompleted?.Invoke(true);
-                    onCompleted = null;
+                    if (rowData.Length > 0) rowData.Append(',');
+                    rowData.Append(value);
                 }
-            };
 
-            for (int i = 0; i < Math.Min(Config.ExportThreadCount, xlsxStatus.Keys.Count); ++i)
-            {
-                var thread = new Thread(saveAsync);
-                thread.IsBackground = true;
-                saveThreads.Add(thread);
-                thread.Start();
+                rowData.Append("\r\n");
+                data.Append(rowData.ToString());
+
+                ++rowIndex;
+                onStatus?.Invoke(Path, "正在处理", string.Format(ProgressFormat, (int)(rowIndex * 100.0 / sheet.Count) + "%"));
             }
+
+            content = data.ToString();
+            return true;
         }
     }
 }

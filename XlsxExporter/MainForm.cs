@@ -8,76 +8,79 @@ namespace XlsxExporter
 {
     public partial class MainForm : Form
     {
-        public Dictionary<string, DataGridViewRow> Rows { get; private set; } = new Dictionary<string, DataGridViewRow>();
-        private Exporter _exporter;
+        /// <summary>
+        /// 文件对应DataGridViewRow
+        /// </summary>
+        private readonly Dictionary<string, DataGridViewRow> _rows = new Dictionary<string, DataGridViewRow>();
+        private readonly Exporter _exporter = new Exporter();
 
-        public MainForm()
-        {
-            InitializeComponent();
+        public MainForm() => InitializeComponent();
 
-            _exporter = new Exporter();
-        }
-
-        private void MainForm_Load(object sender, EventArgs e)
+        private void OnMainFormLoad(object sender, EventArgs e)
         {
             _pb_progress.Visible = _lb_progressText.Visible = false;
             _tb_exportDir.Text = Config.ExportDir;
 
             _tm_updateUI.Tick += new EventHandler((_, _1) => UpdateUI());
 
-            reload();
+            Reload();
         }
 
-        private void _btn_outBrowse_Click(object sender, EventArgs e)
+        private void OnBtnClick(object sender, EventArgs e)
         {
-            using (var folderDialog = new FolderBrowserDialog())
+            if (sender == _btn_outBrowse)
             {
-                folderDialog.Description = "选择输出文件夹：";
-                folderDialog.SelectedPath = Config.ExportDir;
-                if (folderDialog.ShowDialog() == DialogResult.OK)
+                using (var folderDialog = new FolderBrowserDialog())
                 {
-                    _tb_exportDir.Text = folderDialog.SelectedPath;
+                    folderDialog.Description = "选择输出文件夹：";
+                    folderDialog.SelectedPath = Config.ExportDir;
+                    if (folderDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        _tb_exportDir.Text = folderDialog.SelectedPath;
+                    }
                 }
             }
-        }
-
-        private void _btn_editConfig_Click(object sender, EventArgs e)
-        {
-            switch (new ConfigForm().ShowDialog(this))
+            else if (sender == _btn_editConfig)
             {
-                default:
-                    _tb_exportDir.Text = Config.ExportDir;
-                    reload();
-                    break;
+                switch (new ConfigForm().ShowDialog(this))
+                {
+                    default:
+                        _tb_exportDir.Text = Config.ExportDir;
+                        Reload();
+                        break;
+                }
+            }
+            else if (sender == _btn_reloadConfig)
+            {
+                Reload();
+            }
+            else if (sender == _btn_export)
+            {
+                _tb_exportDir.Enabled = _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = _btn_export.Enabled = false;
+                _exporter.ExportAll(isOk => Invoke(new Action(() =>
+                {
+                    _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = true;
+                    _tb_exportDir.Enabled = _btn_export.Enabled = isOk;
+                })), OnStatus);
             }
         }
 
-        private void _btn_reloadConfig_Click(object sender, EventArgs e)
+        private void Reload()
         {
-            reload();
-        }
-
-        private void _btn_export_Click(object sender, EventArgs e)
-        {
-            _tb_exportDir.Enabled = _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = _btn_export.Enabled = false;
-            _exporter.Export(isOk => Invoke(new Action(() => _tb_exportDir.Enabled = _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = _btn_export.Enabled = true)), OnStatus);
-        }
-
-        private void reload()
-        {
-            Rows.Clear();
+            _rows.Clear();
             _dgv_task.Rows.Clear();
-            foreach(var file in _exporter.Load(OnStatus))
+            foreach (var file in _exporter.Load(OnStatus))
             {
                 var row = _dgv_task.Rows[_dgv_task.Rows.Add()];
                 row.Cells[0].Value = Path.GetFileName(file);
-                Rows.Add(file, row);
+                _rows.Add(file, row);
             }
 
-            _btn_export.Enabled = Rows.Count > 0;
+            _tb_exportDir.Enabled = _btn_outBrowse.Enabled = _btn_editConfig.Enabled = _btn_reloadConfig.Enabled = true;
+            _btn_export.Enabled = _rows.Count > 0;
         }
 
-        private Dictionary<string, string[/*6*/]> progressCache = new Dictionary<string, string[/*6*/]>();
+        private readonly Dictionary<string, string[/*6*/]> progressCache = new Dictionary<string, string[/*6*/]>();
         private void UpdateUI()
         {
             List<string[/*4*/]> updateData = new List<string[/*4*/]>();
@@ -101,7 +104,7 @@ namespace XlsxExporter
                 string file = data[0], status = data[1], progress = data[2], error = data[3];
                 if (file != "")
                 {
-                    if (Rows.TryGetValue(file, out DataGridViewRow row))
+                    if (_rows.TryGetValue(file, out DataGridViewRow row))
                     {
                         if (status != null) row.Cells[1].Value = status;
                         if (progress != null) row.Cells[2].Value = progress;
@@ -116,8 +119,8 @@ namespace XlsxExporter
                     {
                         if (float.TryParse(progress, out float percent))
                         {
-                            _pb_progress.Visible = _lb_progressText.Visible = percent > 0;
-                            _pb_progress.Value = (int)(_pb_progress.Maximum * percent);
+                            _pb_progress.Visible = _lb_progressText.Visible = percent >= 0;
+                            _pb_progress.Value = (int)(_pb_progress.Maximum * (percent < 0 ? 0 : percent > 1 ? 1 : percent));
                             _lb_progressText.Text = (int)(percent * 100) + "%";
                         }
                         else
