@@ -71,8 +71,8 @@ namespace XlsxExporter
             Dictionary<string, int> status = _paths.ToDictionary(path => path, _ => 0);
             for (int i = 0; i < Math.Min(Config.ExportThreadCount, status.Count); ++i)
             {
-                bool isBreak = false;
                 int threadCount = 0;
+                bool isBreak = false;
                 var thread = new Thread(() =>
                 {
                     ++threadCount;
@@ -84,15 +84,15 @@ namespace XlsxExporter
                         {
                             status[path] = 1;
                             onStatus?.Invoke(null, "正在处理...", status.Values.ToArray().Count(e => e == 2) * 1.0 / status.Count + "");
-                            Export(path, isOk =>
+                            if (Export(path, onStatus))
                             {
-                                isBreak = !isOk;
-                                if (isOk)
-                                {
-                                    status[path] = 2;
-                                    onStatus?.Invoke(null, "正在处理...", status.Values.ToArray().Count(e => e == 2) * 1.0 / status.Count + "");
-                                }
-                            }, onStatus);
+                                status[path] = 2;
+                                onStatus?.Invoke(null, "正在处理...", status.Values.ToArray().Count(e => e == 2) * 1.0 / status.Count + "");
+                            }
+                            else
+                            {
+                                isBreak = true;
+                            }
                         }
                     }
 
@@ -112,55 +112,71 @@ namespace XlsxExporter
         /// 导出
         /// </summary>
         /// <param name="path">xlsx文件路径</param>
-        /// <param name="onCompleted">完成回调</param>
         /// <param name="onStatus">状态</param>
-        public void Export(string path, OnCompletedHandler onCompleted, OnStatusHandler onStatus)
+        public bool Export(string path, OnStatusHandler onStatus)
         {
             onStatus?.Invoke(path, "正在处理", "正在分析...");
-            using (Workbook workbook = new Workbook(path))
+            try
             {
-                int sheetIndex = 0;
-                while (workbook.Read(out var worksheet))
+                using (Workbook workbook = new Workbook(path))
                 {
-                    ++sheetIndex;
-
-                    List<List<object>> sheet = new List<List<object>>();
-
-                    /** 读取校验 */
-                    int rowIndex = 0;
-                    onStatus?.Invoke(path, "正在处理", string.Format("表({0}/{1}), 正在读取, 表: {2}, 行({3}/{4})", sheetIndex, workbook.WorksheetCount, worksheet.Name, rowIndex, worksheet.RowCount));
-                    while (worksheet.Read(out var row))
+                    int sheetIndex = 0;
+                    while (workbook.Read(out var worksheet))
                     {
-                        ++rowIndex;
-                        List<object> sheetRow = new List<object>();
-                        foreach (var cell in row)
+                        ++sheetIndex;
+                        // 读取
+                        string readProgressFormat = string.Format("表({0}/{1}), 正在读取, 表: {2}, ", sheetIndex, workbook.WorksheetCount, worksheet.Name) + "（{0}）";
+                        if (Read(path, worksheet, out List<List<object>> sheet, readProgressFormat, onStatus))
                         {
-                            /** 校验单元格数据 */
-                            //
-
-                            sheetRow.Add(cell.Value);
+                            /** 转换 */
+                            string csvConvertProgressFormat = string.Format("表({0}/{1}), 正在转换CSV, 表: {2}, ", sheetIndex, workbook.WorksheetCount, worksheet.Name) + "{0}";
+                            if (new CsvConverter().Convert(path, sheet, out string csvData, csvConvertProgressFormat, onStatus))
+                            {
+                                using (var stream = new FileStream(Config.ExportDir + "/" + worksheet.Name + ".csv", FileMode.Create))
+                                {
+                                    var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false));
+                                    writer.Write(csvData);
+                                    writer.Flush();
+                                    writer.Close();
+                                }
+                            }
                         }
-                        if (sheetRow.Count > 0) sheet.Add(sheetRow);
 
-                        onStatus?.Invoke(path, "正在处理", string.Format("表({0}/{1}), 正在读取, 表: {2}, 行({3}/{4})", sheetIndex, workbook.WorksheetCount, worksheet.Name, rowIndex, worksheet.RowCount));
-                    }
-
-                    /** 转换 */
-                    if (new CsvConverter(path, worksheet.Name, string.Format("表({0}/{1}), 正在转换CSV, 表: {2}, ", sheetIndex, workbook.WorksheetCount, worksheet.Name) + "{0}").Convert(sheet, out string csvData, onStatus))
-                    {
-                        using (var stream = new FileStream(Config.ExportDir + "/" + worksheet.Name + ".csv", FileMode.Create))
-                        {
-                            var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false));
-                            writer.Write(csvData);
-                            writer.Flush();
-                            writer.Close();
-                        }
-                    }
+                    } 
+                    onStatus?.Invoke(path, "完成", null);
                 }
-
-                onStatus?.Invoke(path, "完成", null);
-                onCompleted?.Invoke(true);
             }
+            catch(Exception e)
+            {
+                onStatus?.Invoke(path, "错误", e.Message, true);
+                return false;
+            }
+            return true;
+        }
+
+        public bool Read(string path, Worksheet worksheet, out List<List<object>> data, string progressFormat = "{0}", OnStatusHandler onStatus = null)
+        {
+            data = new List<List<object>>();
+            onStatus?.Invoke(path, "正在处理", string.Format(progressFormat, "(0/"+ worksheet.RowCount + ")"));
+
+            int rowIndex = 0;
+            while (worksheet.Read(out var row))
+            {
+                ++rowIndex;
+                List<object> rowData = new List<object>();
+                foreach (var cell in row)
+                {
+                    /** 校验单元格数据 */
+                    //
+
+                    rowData.Add(cell.Value);
+                }
+                if (rowData.Count > 0) data.Add(rowData);
+
+                onStatus?.Invoke(path, "正在处理", string.Format(progressFormat, "(" + rowIndex + "/" +  worksheet.RowCount + ")"));
+            }
+
+            return true;
         }
     }
 }

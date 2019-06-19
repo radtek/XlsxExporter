@@ -26,38 +26,13 @@ namespace XlsxExporter.Converter
     public abstract class Converter
     {
         /// <summary>
-        /// 工作簿路径
-        /// </summary>
-        public string Path { get; }
-        /// <summary>
-        /// 工作表名字
-        /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        /// 进度提示格式化
-        /// </summary>
-        public string ProgressFormat { get; set; }
-
-        /// <summary>
-        /// Converter
-        /// </summary>
-        /// <param name="path">工作簿路径</param>
-        /// <param name="name">工作表名字</param>
-        /// <param name="progressFormat">进度提示格式化</param>
-        public Converter(string path, string name, string progressFormat = "{0}")
-        {
-            Path = path;
-            Name = name;
-            ProgressFormat = progressFormat;
-        }
-
-        /// <summary>
         /// 转换工作表数据
         /// </summary>
+        /// <param name="path">工作簿路径</param>
         /// <param name="sheet">工作表数据</param>
         /// <param name="content">工作表数据</param>
+        /// <param name="progressFormat">进度提示格式化</param>
         /// <param name="onStatus">状态回调</param>
-        public abstract bool Convert(List<List<object>> sheet, out string content, OnStatusHandler onStatus = null);
+        public abstract bool Convert(string path, List<List<object>> sheet, out string content, string progressFormat = "{0}", OnStatusHandler onStatus = null);
     }
 }

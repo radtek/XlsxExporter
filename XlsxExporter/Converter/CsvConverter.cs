@@ -28,20 +28,10 @@ namespace XlsxExporter.Converter
 
     public class CsvConverter : Converter
     {
-        /// <summary>
-        /// CsvConverter
-        /// </summary>
-        /// <param name="path">工作簿路径</param>
-        /// <param name="name">工作表名字</param>
-        public CsvConverter(string path, string name, string progressFormat = "{0}") : base(path, name, progressFormat) { }
-
-        public override bool Convert(List<List<object>> sheet, out string content, OnStatusHandler onStatus = null)
+        public override bool Convert(string path, List<List<object>> sheet, out string content, string progressFormat = "{0}", OnStatusHandler onStatus = null)
         {
-            content = "";
-
-
             int rowIndex = 0;
-            onStatus?.Invoke(Path, "正在处理", string.Format(ProgressFormat, "0%"));
+            onStatus?.Invoke(path, "正在处理", string.Format(progressFormat, "0%"));
             StringBuilder data = new StringBuilder();
             foreach (var row in sheet)
             {
@@ -112,7 +102,7 @@ namespace XlsxExporter.Converter
                 data.Append(rowData.ToString());
 
                 ++rowIndex;
-                onStatus?.Invoke(Path, "正在处理", string.Format(ProgressFormat, (int)(rowIndex * 100.0 / sheet.Count) + "%"));
+                onStatus?.Invoke(path, "正在处理", string.Format(progressFormat, (int)(rowIndex * 100.0 / sheet.Count) + "%"));
             }
 
             content = data.ToString();
