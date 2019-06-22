@@ -51,9 +51,9 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new System.Drawing.Point(14, 13);
+            label1.Location = new System.Drawing.Point(14, 11);
             label1.Name = "label1";
-            label1.Size = new System.Drawing.Size(59, 12);
+            label1.Size = new System.Drawing.Size(59, 17);
             label1.TabIndex = 0;
             label1.Text = "输出目录:";
             // 
@@ -94,19 +94,19 @@
             // 
             this._tb_exportDir.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this._tb_exportDir.Location = new System.Drawing.Point(79, 9);
+            this._tb_exportDir.Location = new System.Drawing.Point(79, 8);
             this._tb_exportDir.Name = "_tb_exportDir";
-            this._tb_exportDir.Size = new System.Drawing.Size(264, 21);
+            this._tb_exportDir.Size = new System.Drawing.Size(264, 23);
             this._tb_exportDir.TabIndex = 1;
             // 
             // _btn_outBrowse
             // 
             this._btn_outBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this._btn_outBrowse.Location = new System.Drawing.Point(349, 9);
+            this._btn_outBrowse.Location = new System.Drawing.Point(349, 7);
             this._btn_outBrowse.Name = "_btn_outBrowse";
-            this._btn_outBrowse.Size = new System.Drawing.Size(57, 21);
+            this._btn_outBrowse.Size = new System.Drawing.Size(57, 25);
             this._btn_outBrowse.TabIndex = 2;
-            this._btn_outBrowse.Text = "浏览";
+            this._btn_outBrowse.Text = "浏 览";
             this._btn_outBrowse.UseVisualStyleBackColor = true;
             this._btn_outBrowse.Click += new System.EventHandler(this.OnBtnClick);
             // 
@@ -114,17 +114,16 @@
             // 
             this._lb_status.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this._lb_status.AutoSize = true;
-            this._lb_status.Font = new System.Drawing.Font("宋体", 9F);
-            this._lb_status.Location = new System.Drawing.Point(3, 419);
+            this._lb_status.Location = new System.Drawing.Point(3, 343);
             this._lb_status.Name = "_lb_status";
-            this._lb_status.Size = new System.Drawing.Size(29, 12);
+            this._lb_status.Size = new System.Drawing.Size(32, 17);
             this._lb_status.TabIndex = 0;
             this._lb_status.Text = "就绪";
             // 
             // _pb_progress
             // 
             this._pb_progress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this._pb_progress.Location = new System.Drawing.Point(554, 419);
+            this._pb_progress.Location = new System.Drawing.Point(546, 346);
             this._pb_progress.Maximum = 100000;
             this._pb_progress.Name = "_pb_progress";
             this._pb_progress.Size = new System.Drawing.Size(150, 13);
@@ -134,9 +133,9 @@
             // 
             this._lb_progressText.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this._lb_progressText.AutoSize = true;
-            this._lb_progressText.Location = new System.Drawing.Point(705, 419);
+            this._lb_progressText.Location = new System.Drawing.Point(697, 344);
             this._lb_progressText.Name = "_lb_progressText";
-            this._lb_progressText.Size = new System.Drawing.Size(29, 12);
+            this._lb_progressText.Size = new System.Drawing.Size(40, 17);
             this._lb_progressText.TabIndex = 0;
             this._lb_progressText.Text = "100%";
             // 
@@ -158,21 +157,21 @@
             this._ch_progress});
             dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
             dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
             dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
             dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
             this._dgv_task.DefaultCellStyle = dataGridViewCellStyle1;
             this._dgv_task.GridColor = System.Drawing.SystemColors.Control;
-            this._dgv_task.Location = new System.Drawing.Point(-1, 36);
+            this._dgv_task.Location = new System.Drawing.Point(-1, 38);
             this._dgv_task.Name = "_dgv_task";
             this._dgv_task.ReadOnly = true;
             this._dgv_task.RowHeadersVisible = false;
             this._dgv_task.RowTemplate.Height = 23;
             this._dgv_task.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this._dgv_task.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this._dgv_task.Size = new System.Drawing.Size(735, 380);
+            this._dgv_task.Size = new System.Drawing.Size(736, 306);
             this._dgv_task.TabIndex = 7;
             // 
             // _ch_name
@@ -203,9 +202,9 @@
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(734, 435);
+            this.ClientSize = new System.Drawing.Size(734, 361);
             this.Controls.Add(this._dgv_task);
             this.Controls.Add(this._lb_progressText);
             this.Controls.Add(this._pb_progress);
@@ -216,6 +215,7 @@
             this.Controls.Add(this._btn_export);
             this.Controls.Add(this._btn_reloadConfig);
             this.Controls.Add(this._btn_editConfig);
+            this.Font = new System.Drawing.Font("Microsoft YaHei UI", 9F);
             this.MinimumSize = new System.Drawing.Size(750, 400);
             this.Name = "MainForm";
             this.Text = "Xlsx Exporter";
